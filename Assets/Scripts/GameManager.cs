@@ -5,6 +5,7 @@ using System;
 using UnityEngine;
 using UnityEngine.AI;
 using static UnityEngine.GraphicsBuffer;
+using static UnityEditor.Progress;
 
 public class GameManager : MonoBehaviour
 {
@@ -15,6 +16,8 @@ public class GameManager : MonoBehaviour
     public string filename;
     public Dictionary<int, int> pers;
     public List<int> randPos;
+    public int countMod;
+    public int countOfPoints;
     void Start()
     {
 
@@ -26,12 +29,12 @@ public class GameManager : MonoBehaviour
         {
             for (int i = 0; i < 50; i++)
             {
-                for (int j = 0; j < 20; j++)
+                for (int j = 0; j < countMod; j++)
                 {
                     this.transform.position = new Vector3(-j - 12, this.transform.position.y, -25 + i);
-                    Debug.Log($"Create new obj{i * 20 + j}");
                     GameObject newAi = Instantiate(ai, this.transform.position, Quaternion.identity);
-                    newAi.GetComponent<NavMeshAgent>().avoidancePriority = i * 20 + j;
+                    newAi.GetComponent<NavMeshAgent>().avoidancePriority = i * countMod + j;
+                    newAi.GetComponent<AI>().pCount = countOfPoints;
                     listAI.Add(newAi.GetComponent<AI>());
                 }
             }
@@ -45,17 +48,96 @@ public class GameManager : MonoBehaviour
         {
             for (int i = 0; i < 50; i++)
             {
-                for (int j = 0; j < 20; j++)
+                for (int j = 0; j < countMod; j++)
                 {
                     this.transform.position = new Vector3(-j - 12, this.transform.position.y, -25 + i);
                     GameObject newAi = Instantiate(Trainedai, this.transform.position, Quaternion.identity);
-                    newAi.GetComponent<NavMeshAgent>().avoidancePriority = i * 20 + j;
+                    newAi.GetComponent<NavMeshAgent>().avoidancePriority = i * countMod + j;
                     newAi.GetComponent<TrainedAI>().randPos = this.randPos;
+                    newAi.GetComponent<TrainedAI>().pCount = countOfPoints;
                     listTrainedAI.Add(newAi.GetComponent<TrainedAI>());
                 }
             }
             Debug.Log($"SPAWN");
         }
+    }
+
+    public string RowBuilder(int N)
+    {
+        string res = "";
+
+        for (int i = 0; i < N; i++)
+        {
+            res += $"P{i},";
+        }
+
+        return res + "Points," +
+                     "Finish";
+    }
+
+    public string PosXRowBuilder(int N)
+    {
+        string res = "";
+
+        for (int i = 0; i < N; i++)
+        {
+            if (i == N - 1)
+                res += $"P{i}";
+            else
+                res += $"P{i},";
+        }
+
+        return res;
+    }
+
+    public string PointsBuilder(int N, AI item)
+    {
+        string res = "";
+        for (int i = 0; i < N; i++)
+        {
+            res += $"{Math.Round(item.goods[i], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + ",";
+        }
+
+        return res + $"{Math.Round(item.good, 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," + item.isFinish.ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"));
+    }
+
+    public string PointsTrainedBuilder(int N, TrainedAI item)
+    {
+        string res = "";
+        for (int i = 0; i < N; i++)
+        {
+            res += $"{Math.Round(item.goods[i], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + ",";
+        }
+
+        return res + $"{Math.Round(item.good, 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," + item.isFinish.ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"));
+    }
+
+    public string PosXBuilder(int N, AI item)
+    {
+        string res = "";
+        for (int i = 0; i < N; i++)
+        {
+            if (i == N - 1)
+                res += $"{Math.Round(item.points[i].x, 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}";
+            else
+                res += $"{Math.Round(item.points[i].x, 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + ",";
+        }
+
+        return res;
+    }
+
+    public string PosXTrainedBuilder(int N, TrainedAI item)
+    {
+        string res = "";
+        for (int i = 0; i < N; i++)
+        {
+            if (i == N - 1)
+                res += $"{Math.Round(item.points[i].x, 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}";
+            else
+                res += $"{Math.Round(item.points[i].x, 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + ",";
+        }
+
+        return res;
     }
 
     void Update()
@@ -75,35 +157,13 @@ public class GameManager : MonoBehaviour
             Debug.Log("TRAIN");
             filename = Application.dataPath + "/train.csv";
             TextWriter tw = new StreamWriter(filename, false);
-            tw.WriteLine("P0," +
-                         "P1," +
-                         "P2," +
-                         "P3," +
-                         "P4," +
-                         "P5," +
-                         "P6," +
-                         "P7," +
-                         "P8," +
-                         "P9," +
-                     "Points," +
-                     "Finish");
+            tw.WriteLine(RowBuilder(countOfPoints));
             tw.Close();
             tw = new StreamWriter(filename, true);
             foreach (var item in listAI)
             {
                 if (item.good <= 0) item.good = 0.0f;
-                tw.WriteLine($"{Math.Round(item.goods[0], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{Math.Round(item.goods[1], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{Math.Round(item.goods[2], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{Math.Round(item.goods[3], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{Math.Round(item.goods[4], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{Math.Round(item.goods[5], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{Math.Round(item.goods[6], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{Math.Round(item.goods[7], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{Math.Round(item.goods[8], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{Math.Round(item.goods[9], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                                 $"{Math.Round(item.good, 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             item.isFinish.ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US")));
+                tw.WriteLine(PointsBuilder(countOfPoints, item));
             }
             tw.Close();
         }
@@ -119,35 +179,13 @@ public class GameManager : MonoBehaviour
             Debug.Log("TEST");
             filename = Application.dataPath + "/test.csv";
             TextWriter tw = new StreamWriter(filename, false);
-            tw.WriteLine("P0," +
-                         "P1," +
-                         "P2," +
-                         "P3," +
-                         "P4," +
-                         "P5," +
-                         "P6," +
-                         "P7," +
-                         "P8," +
-                         "P9," +
-                     "Points," +
-                     "Finish");
+            tw.WriteLine(RowBuilder(countOfPoints));
             tw.Close();
             tw = new StreamWriter(filename, true);
             foreach (var item in listAI)
             {
                 if (item.good <= 0) item.good = 0.0f;
-                tw.WriteLine($"{Math.Round(item.goods[0], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{Math.Round(item.goods[1], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{Math.Round(item.goods[2], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{Math.Round(item.goods[3], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{Math.Round(item.goods[4], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{Math.Round(item.goods[5], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{Math.Round(item.goods[6], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{Math.Round(item.goods[7], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{Math.Round(item.goods[8], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{Math.Round(item.goods[9], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                                 $"{Math.Round(item.good, 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             item.isFinish.ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US")));
+                tw.WriteLine(PointsBuilder(countOfPoints, item));
             }
             tw.Close();
         }
@@ -157,37 +195,13 @@ public class GameManager : MonoBehaviour
             Debug.Log("POSX");
             filename = Application.dataPath + "/posx.csv";
             TextWriter tw = new StreamWriter(filename, false);
-            tw.WriteLine("P0," +
-                         "P1," +
-                         "P2," +
-                         "P3," +
-                         "P4," +
-                         "P5," +
-                         "P6," +
-                         "P7," +
-                         "P8," +
-                         "P9"
-                     //"Points," +
-                     //"Finish"
-                     );
+            tw.WriteLine(PosXRowBuilder(countOfPoints));
             tw.Close();
             tw = new StreamWriter(filename, true);
             foreach (var item in listAI)
             {
                 if (item.good <= 0) item.good = 0.0f;
-                tw.WriteLine($"{item.points[0].x.ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{item.points[1].x.ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{item.points[2].x.ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{item.points[3].x.ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{item.points[4].x.ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{item.points[5].x.ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{item.points[6].x.ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{item.points[7].x.ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{item.points[8].x.ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{item.points[9].x.ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}"
-                             //$"{Math.Round(item.good, 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             //item.isFinish.ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))
-                             );
+                tw.WriteLine(PosXBuilder(countOfPoints,item));
             }
             tw.Close();
         }
@@ -231,35 +245,13 @@ public class GameManager : MonoBehaviour
             Debug.Log("TRAIN");
             filename = Application.dataPath + "/train.csv";
             TextWriter tw = new StreamWriter(filename, false);
-            tw.WriteLine("P0," +
-                         "P1," +
-                         "P2," +
-                         "P3," +
-                         "P4," +
-                         "P5," +
-                         "P6," +
-                         "P7," +
-                         "P8," +
-                         "P9," +
-                     "Points," +
-                     "Finish");
+            tw.WriteLine(RowBuilder(10));
             tw.Close();
             tw = new StreamWriter(filename, true);
             foreach (var item in listTrainedAI)
             {
                 if (item.good <= 0) item.good = 0.0f;
-                tw.WriteLine($"{Math.Round(item.goods[0], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{Math.Round(item.goods[1], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{Math.Round(item.goods[2], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{Math.Round(item.goods[3], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{Math.Round(item.goods[4], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{Math.Round(item.goods[5], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{Math.Round(item.goods[6], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{Math.Round(item.goods[7], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{Math.Round(item.goods[8], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{Math.Round(item.goods[9], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                                 $"{Math.Round(item.good, 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             item.isFinish.ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US")));
+                tw.WriteLine(PointsTrainedBuilder(countOfPoints, item));
             }
             tw.Close();
         }
@@ -275,35 +267,13 @@ public class GameManager : MonoBehaviour
             Debug.Log("TEST");
             filename = Application.dataPath + "/test.csv";
             TextWriter tw = new StreamWriter(filename, false);
-            tw.WriteLine("P0," +
-                         "P1," +
-                         "P2," +
-                         "P3," +
-                         "P4," +
-                         "P5," +
-                         "P6," +
-                         "P7," +
-                         "P8," +
-                         "P9," +
-                     "Points," +
-                     "Finish");
+            tw.WriteLine(RowBuilder(countOfPoints));
             tw.Close();
             tw = new StreamWriter(filename, true);
             foreach (var item in listTrainedAI)
             {
                 if (item.good <= 0) item.good = 0.0f;
-                tw.WriteLine($"{Math.Round(item.goods[0], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{Math.Round(item.goods[1], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{Math.Round(item.goods[2], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{Math.Round(item.goods[3], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{Math.Round(item.goods[4], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{Math.Round(item.goods[5], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{Math.Round(item.goods[6], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{Math.Round(item.goods[7], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{Math.Round(item.goods[8], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{Math.Round(item.goods[9], 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                                 $"{Math.Round(item.good, 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             item.isFinish.ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US")));
+                tw.WriteLine(PointsTrainedBuilder(countOfPoints, item));
             }
             tw.Close();
         }
@@ -313,37 +283,13 @@ public class GameManager : MonoBehaviour
             Debug.Log("POSX");
             filename = Application.dataPath + "/posx.csv";
             TextWriter tw = new StreamWriter(filename, false);
-            tw.WriteLine("P0," +
-                         "P1," +
-                         "P2," +
-                         "P3," +
-                         "P4," +
-                         "P5," +
-                         "P6," +
-                         "P7," +
-                         "P8," +
-                         "P9"
-                     //"Points," +
-                     //"Finish"
-                     );
+            tw.WriteLine(PosXRowBuilder(countOfPoints));
             tw.Close();
             tw = new StreamWriter(filename, true);
             foreach (var item in listTrainedAI)
             {
                 if (item.good <= 0) item.good = 0.0f;
-                tw.WriteLine($"{item.points[0].x.ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{item.points[1].x.ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{item.points[2].x.ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{item.points[3].x.ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{item.points[4].x.ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{item.points[5].x.ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{item.points[6].x.ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{item.points[7].x.ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{item.points[8].x.ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             $"{item.points[9].x.ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}"
-                             //$"{Math.Round(item.good, 2).ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))}" + "," +
-                             //item.isFinish.ToString(System.Globalization.CultureInfo.GetCultureInfo("en-US"))
-                             );
+                tw.WriteLine(PosXTrainedBuilder(countOfPoints, item));
             }
             tw.Close();
         }

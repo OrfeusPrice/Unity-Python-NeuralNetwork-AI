@@ -29,8 +29,9 @@ X_test = test_data.drop('Finish', axis=1)
 Y_test = to_categorical(test_data['Finish'])
 
 model = Sequential()
-model.add(Dense(12, activation='relu', input_dim=11))
-model.add(Dense(8, activation='relu'))
+model.add(Dense(64, activation='relu', input_dim=11))
+model.add(Dense(32, activation='relu'))
+model.add(Dense(16, activation='relu'))
 model.add(Dense(2, activation='sigmoid'))
 
 model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
@@ -49,7 +50,7 @@ print('Точность:', score[1])
 
 predictions = model.predict(X_test)
 
-model.save('my_model.h5')
+# model.save('my_model.h5')
 
 score = model.evaluate(X_test, Y_test, verbose=0)
 print('Потери:', score[0])

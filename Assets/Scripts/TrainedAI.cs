@@ -18,9 +18,11 @@ public class TrainedAI : MonoBehaviour
     public int isFinish;
     public Dictionary<GameObject, bool> walls = new Dictionary<GameObject, bool>();
     public List<int> randPos = new List<int>();
+    public bool isOnNavMesh;
+    public int pCount;
     void Start()
     {
-        for (int i = 0; i < 10; i++)
+        for (int i = 0; i < pCount; i++)
         {
             points.Add(new Vector3(randPos[Random.Range(0, randPos.Count)], 1, transform.position.z));
         }
@@ -28,26 +30,33 @@ public class TrainedAI : MonoBehaviour
         cur_p = 0;
         isFinish = 0;
         temp_good = 0;
-        for (int i = 0; i < 10; i++) { goods.Add(0); }
+        for (int i = 0; i < pCount; i++) { goods.Add(0); }
         agent = this.GetComponent<NavMeshAgent>();
-        agent.destination = points[cur_p];
+        isOnNavMesh = false;
     }
 
     void Update()
     {
-        if (agent.remainingDistance < 0.2)
+        if (agent.isOnNavMesh && !isOnNavMesh)
         {
-            goods[cur_p] = temp_good;
-            temp_good = 0;
-            cur_p++;
-            if (cur_p >= points.Count)
-            {
-                //good -= 0.1f;
-                this.gameObject.SetActive(false);
-            }
-            else
-                agent.destination = points[cur_p];
+            agent.destination = points[cur_p];
+            isOnNavMesh = true;
         }
+
+        if (isOnNavMesh)
+            if (agent.remainingDistance < 0.2)
+            {
+                goods[cur_p] = temp_good;
+                temp_good = 0;
+                cur_p++;
+                if (cur_p >= points.Count)
+                {
+                    //good -= 0.1f;
+                    this.gameObject.SetActive(false);
+                }
+                else
+                    agent.destination = points[cur_p];
+            }
     }
 
     private void OnTriggerEnter(Collider other)
