@@ -52,11 +52,20 @@ predictions = model.predict(X_test)
 
 # model.save('my_model.h5')
 
-score = model.evaluate(X_test, Y_test, verbose=0)
-print('Потери:', score[0])
-print('Точность:', score[1])
 
 predictions = np.argmax(predictions, axis=1)
+Y_test = np.argmax(Y_test, axis=1)
+
+accuracy = accuracy_score(Y_test, predictions)
+print('Точность:', accuracy)
+
+cm = confusion_matrix(Y_test, predictions)
+
+sns.heatmap(cm, annot=True, fmt='d')
+plt.title('Confusion Matrix')
+plt.xlabel('Predicted Label')
+plt.ylabel('Actual Label')
+plt.show()
 
 pos = pd.read_csv("posx.csv")
 pos['Finish'] = predictions
